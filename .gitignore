@@ -1,0 +1,6 @@
+*.o
+deepstream-app
+deepstream-nvdsanalytics-test
+*.so
+*.engine
+data-default/*

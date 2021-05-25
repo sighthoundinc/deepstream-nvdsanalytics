@@ -1,0 +1,68 @@
+FROM nvcr.io/nvidia/deepstream:5.0.1-20.09-base AS deepstream-deploy
+# Install tensorflow gpu to support building output uff files at runtime 
+# from the development container.  We won't need this on the production container
+RUN apt-get update && apt-get install -y python3-dev
+RUN apt-get update && apt-get install -y python3-pip && pip3 install tensorflow-gpu
+# None of the dGPU containers include the tensorrt/samples directory and
+# the corresponding nvinfer package also doesn't exist.  So pull this file
+# out of the github archive instead.
+# Use the 7.1.3 version of tensorflow since this is the same version used
+# in JP 4.4 on Jetson product
+RUN apt-get update && apt-get install -y wget unzip
+RUN mkdir -p /usr/src/app/src
+RUN mkdir tensorflow && cd tensorflow && \
+    wget https://github.com/NVIDIA/TensorRT/archive/7.1.3.tar.gz && \
+    tar -xvf 7.1.3.tar.gz && \
+    mkdir -p /usr/src/tensorrt/samples/ && \
+    cp -r TensorRT-7.1.3/samples/opensource/sampleUffSSD \
+        /usr/src/tensorrt/samples && \
+        cd /usr/src/app &&  \
+        rm -rf /tmp/tensorflow
+
+# A sample file so we can run without setup if needed.  Also not needed
+# for production
+RUN mkdir -p /opt/nvidia/deepstream/deepstream/samples/streams
+COPY --from=nvcr.io/nvidia/deepstream:5.0.1-20.09-samples \ 
+    /opt/nvidia/deepstream/deepstream/samples/streams/sample_1080p_h265.mp4 \
+    /opt/nvidia/deepstream/deepstream/samples/streams
+
+# With the samples container I hit the bug at
+# https://forums.developer.nvidia.com/t/nvcaffeparser-h-missing-in-docker-for-deepstream-5-0-objectdetector-yolo/154623/5?u=danwalkes1
+# attmpting to build the nvdsinfer plugin.
+FROM nvcr.io/nvidia/deepstream:5.0.1-20.09-triton AS deepstream-build
+ 
+RUN apt-get update && apt-get install -y build-essential
+RUN apt-get install -y libgstreamer1.0-dev libgstrtspserver-1.0-dev
+RUN apt-get install -y libjson-glib-dev
+
+RUN mkdir -p /usr/src/app/src
+
+COPY . /usr/src/app/src
+
+WORKDIR /usr/src/app/src
+
+RUN make -f Makefile.ds
+
+RUN cd nvdsinfer_custom_impl_ssd && \
+    CUDA_VER=10.2 make
+
+FROM deepstream-deploy
+
+RUN mkdir -p /usr/src/app/ && \
+    mkdir -p /usr/src/app/lib/
+
+COPY --from=deepstream-build /usr/src/app/src/nvdsinfer_custom_impl_ssd/*.so \
+        /usr/src/app/lib/
+
+COPY --from=deepstream-build /usr/src/app/src/*.sh /usr/src/app/
+COPY --from=deepstream-build /usr/src/app/src/deepstream-app /usr/src/app/
+COPY --from=deepstream-build /usr/src/app/src/cfg-deepstream-default \
+    /usr/src/app/cfg-deepstream-default
+COPY --from=deepstream-build /usr/src/app/src/cfg-model-default \
+    /usr/src/app/cfg-model-default
+
+WORKDIR /tmp/
+
+WORKDIR /usr/src/app
+
+ENTRYPOINT [ "/usr/src/app/initScript.sh" ]

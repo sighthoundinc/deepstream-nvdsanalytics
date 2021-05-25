@@ -1,0 +1,117 @@
+################################################################################
+# Copyright (c) 2018-2020, NVIDIA CORPORATION. All rights reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
+################################################################################
+
+[application]
+enable-perf-measurement=1
+perf-measurement-interval-sec=1
+gie-kitti-output-dir=streamscl
+
+[tiled-display]
+enable=0
+rows=1
+columns=1
+width=720
+height=480
+gpu-id=0
+nvbuf-memory-type=0
+
+[source0]
+# See https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_ref_app_deepstream.html#source-group
+enable=1
+#Type - 1=CameraV4L2 2=URI 3=MultiURI
+type=3
+num-sources=1
+uri=file:///input/video.mp4
+gpu-id=0
+cudadec-memtype=0
+
+[streammux]
+gpu-id=0
+batch-size=1
+batched-push-timeout=-1
+## Set muxer output width and height
+width=720
+height=480
+nvbuf-memory-type=0
+
+[sink0]
+# See https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_ref_app_deepstream.html#sink-group
+enable=1
+#Type - 1=FakeSink 2=EglSink 3=File 4=RTSP
+type=3
+codec=1
+bitrate=4000000
+nvbuf-memory-type=0
+rtsp-port=8554
+udp-port=5400
+width=720
+height=480
+sync=0
+source-id=0
+gpu-id=0
+output-file=/output/overlay.mp4
+# for mp4 output
+container=1
+[osd]
+enable=1
+gpu-id=0
+border-width=3
+text-size=15
+text-color=1;1;1;1;
+text-bg-color=0.3;0.3;0.3;1
+font=Serif
+show-clock=0
+clock-x-offset=800
+clock-y-offset=820
+clock-text-size=12
+clock-color=1;0;0;0
+nvbuf-memory-type=0
+
+[primary-gie]
+enable=1
+gpu-id=0
+batch-size=1
+gie-unique-id=1
+interval=0
+labelfile-path=/data/cfg/model/labels.txt
+#model-engine-file=sample_ssd_relu6.uff_b1_gpu0_fp32.engine
+#model-engine-file=resnet34_peoplenet_pruned.etlt_b1_gpu0_fp16.engine
+config-file=/data/cfg/deepstream/bai_tlt_config_infer_primary_peoplenet.txt
+nvbuf-memory-type=0
+
+[tracker]
+enable=1
+tracker-width=640
+tracker-height=384
+#ll-lib-file=/opt/nvidia/deepstream/deepstream-5.0/lib/libnvds_mot_iou.so
+ll-lib-file=/opt/nvidia/deepstream/deepstream-5.0/lib/libnvds_nvdcf.so
+#ll-lib-file=/opt/nvidia/deepstream/deepstream-5.0/lib/libnvds_mot_klt.so
+#ll-config-file required for DCF/IOU only
+ll-config-file=tracker_config.yml
+#ll-config-file=iou_config.txt
+gpu-id=0
+#enable-batch-process applicable to DCF only
+enable-batch-process=1
+
+[nvds-analytics]
+enable=1
+config-file=/data/cfg/deepstream/bai_config_nvdsanalytics.txt
