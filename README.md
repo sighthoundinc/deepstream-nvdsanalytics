@@ -63,10 +63,9 @@ contain:
  defaults in [src/cfg-deepstream-default](src/cfg-deepstream-default).
 
  * `/data/cfg/model` containing model related files.  The default model is
- currently peoplenet.  If a uff based model is present but no `.uff` file
- is present in the model directory at startup it will be populated with a default ssd coco
- model and label files (see [src/cfg-model-default](src/cfg-model-default) and
- the [src/generate-uff.sh](src/generate-uff.sh) script).
+ currently [peoplenet](https://ngc.nvidia.com/catalog/models/nvidia:tlt_peoplenet).
+ This model is downloaded through the [src/setup-peoplenet.sh](src/setup-peoplenet.sh)
+ script if it doesn't already exist.
 
 ### Viewing Output
 
@@ -82,16 +81,3 @@ the container.  This will be mapped to `/data` inside the container.  You can
 use this to add files to the container, modify the deepstream configuration,
 or update the model, then re-run as desired.
 
-## Switching to SSD Model
-
-By default this setup uses a Peoplenet TLT model.  To switch to SSD,
-change the line referencing `config-file` in the `[primare-gie]` section of
-the `bai_deepstream.txt` file to use 
-`config-file=/data/cfg/deepstream/bai_config_infer_primary_ssd.txt`
-
-## Updating SSD Model Files
-
-You can replace the model file by copying the .pb file into the data directory
-under the `model` subdir, replacing the existing .pb file there, and also
-deleting the .uff file.  The .uff will get regenerated for the new model on
-the next run.

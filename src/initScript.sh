@@ -17,14 +17,8 @@ if [ ! -d /output ]; then
     mkdir -p /data/output
     ln -s /data/output /output
 fi
-cat /data/cfg/deepstream/bai_deepstream.txt | grep "^config-file" | grep peoplenet
-if [ $? -eq 0 ]; then
-    echo "Detected peoplenet setup, setting up peoplenet model"
-    ./setup-peoplenet.sh
-else
-    echo "Setting up SSD"
-    ./generate-uff.sh
-fi
+echo "Setting up peoplenet model"
+./setup-peoplenet.sh
 cp --no-clobber -r cfg-model-default/* /data/cfg/model/
 ./deepstream-app -c /data/cfg/deepstream/bai_deepstream.txt 2>&1 \
     | tee /data/output/deepstream_logs.txt
