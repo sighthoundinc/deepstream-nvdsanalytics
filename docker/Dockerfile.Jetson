@@ -14,9 +14,18 @@ COPY . /usr/src/app/src
 
 WORKDIR /usr/src/app/src
 
+RUN cd / && for patchfile in /usr/src/app/src/patches/*.patch; do patch -p0 < $patchfile; done
+
 RUN make -f Makefile.ds
 
 FROM deepstream-deploy
+
+# Install baicamerasrc
+COPY --from=gcr.io/external-bai/bai-baicamerasrc:1.3-r32.4.3 /baicamerasrc.deb \
+    /tmp/
+
+RUN dpkg -i /tmp/baicamerasrc.deb
+
 # Not needed in production container, only here for test purposes
 COPY --from=deepstream-build /opt/nvidia/deepstream/deepstream/samples/streams/sample_1080p_h265.mp4 \
 	/opt/nvidia/deepstream/deepstream/samples/streams/sample_1080p_h265.mp4

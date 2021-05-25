@@ -1,0 +1,11 @@
+--- opt/nvidia/deepstream/deepstream-5.0/sources/apps/apps-common/includes/deepstream_config.h 2020-09-28 20:42:30.000000000 +0000
++++ opt/nvidia/deepstream/deepstream-5.0/sources/apps/apps-common/includes/deepstream_config.h 2021-01-20 01:04:53.000000000 +0000
+@@ -30,7 +30,7 @@
+ #define MEMORY_FEATURES "memory:NVMM"
+
+ #ifdef IS_TEGRA
+-#define NVDS_ELEM_SRC_CAMERA_CSI "nvarguscamerasrc"
++#define NVDS_ELEM_SRC_CAMERA_CSI "baicamerasrc"
+ #else
+ #define NVDS_ELEM_SRC_CAMERA_CSI "videotestsrc"
+ #endif

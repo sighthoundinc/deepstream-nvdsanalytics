@@ -1,0 +1,24 @@
+--- /opt/nvidia/deepstream/deepstream-5.0/sources/apps/apps-common/src/deepstream_source_bin.c	2020-09-28 20:42:30.000000000 +0000
++++ /opt/nvidia/deepstream/deepstream-5.0/sources/apps/apps-common/src/deepstream_source_bin.c	2021-01-20 01:50:04.000000000 +0000
+@@ -172,12 +172,19 @@
+     NVGSTDS_BIN_ADD_GHOST_PAD (bin->bin, bin->cap_filter, "src");
+ 
+   } else {
++    GstElement *nvvidconv1;
++    nvvidconv1 = gst_element_factory_make (NVDS_ELEM_VIDEO_CONV, "nvvidconv1");
++    if (!nvvidconv1) {
++      NVGSTDS_ERR_MSG_V ("Failed to create 'nvvidconv1'");
++      goto done;
++    }
+ 
+     g_object_set (G_OBJECT (bin->cap_filter), "caps", caps, NULL);
+ 
+-    gst_bin_add_many (GST_BIN (bin->bin), bin->src_elem, bin->cap_filter, NULL);
++    gst_bin_add_many (GST_BIN (bin->bin), bin->src_elem, nvvidconv1, bin->cap_filter, NULL);
+ 
+-    NVGSTDS_LINK_ELEMENT (bin->src_elem, bin->cap_filter);
++    NVGSTDS_LINK_ELEMENT (bin->src_elem, nvvidconv1);
++    NVGSTDS_LINK_ELEMENT (nvvidconv1, bin->cap_filter);
+ 
+     NVGSTDS_BIN_ADD_GHOST_PAD (bin->bin, bin->cap_filter, "src");
+   }
