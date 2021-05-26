@@ -4,3 +4,5 @@ deepstream-nvdsanalytics-test
 *.so
 *.engine
 data-default/*
+data-demo/
+.*.un~

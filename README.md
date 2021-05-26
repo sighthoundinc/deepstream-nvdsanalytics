@@ -1,4 +1,4 @@
-# bai-nvdsanalytics
+# bai-nvdsanalytics (baicamerasrc)
 
 Boulder AI customizations on top of the NVIDIA deepstream nvdsanalytics project.
 
@@ -8,52 +8,35 @@ for more details about the configuration and setup.
 
 ## Building
 
-run `./docker/build.sh`
+Run `./docker/build.sh`
 
-## Running
+## Running with Image Sensor input (baicamerasrc)
 
-run `./docker/run.sh [docker options]` where `[docker options]` can optionally
+Run `./docker/run.sh [docker options]` where `[docker options]` can optionally
 specify volume mounts to mount volumes inside the docker container with
 `-v <path>:<container path>` where `path` represents the path outside
-the container and `container path` represents the path inside the container.
-Use these container paths:
+the container and `container path` represents the path inside the container.  
+You can use the `/data` container path to use configs other than the default.
 
  * `/data` for the working base directory (see /data/ structure below).  If
  not specified, this directory will be written to `data-default` in this
  working directory.
 
-* `/input` for input files. Use `/input/video.mp4` for the input video used
- in the default configuration. If not specified, the container will provide
- its own sample video as input.
-
-* `/output` for output files, where the container will write its output.
- If not specified, the output will be written to the `/data/output` directory
- inside the container and viewable wherever the `/data` container directory
- is mounted outside the container.
- A file "overlay.mp4" in this directory will contain the output video overlay.
- An output log will also be saved in this directory.
-
 For more about docker volume mounts, see the [documentation on docker.com](https://docs.docker.com/storage/volumes/)
 
-Examples:
-Run with default input video, writing output to `data-default`:
-
+Examples:  
+Run with default model ([peoplenet](https://ngc.nvidia.com/catalog/models/nvidia:tlt_peoplenet)):  
 `./docker/run.sh`
 
-Run with custom input video at `/tmp/my-test-video.mp4`
-writing output to `data-default`:
-
-`./docker/run.sh -v /tmp/my-test-video.mp4:/input/video.mp4`
-
-Run with custom input video at `/tmp/my-test-video.mp4`
-and write output to `/tmp/data-mytestdir`:
-
+Run with traffic model ([trafficamnet](https://ngc.nvidia.com/catalog/models/nvidia:tlt_trafficcamnet)):  
 ```
-./docker/run.sh -v /tmp/my-test-video.mp4:/input/video.mp4 \
-                -v /tmp/mytestdir-output:/output
+mkdir -p data-demo/cfg/model
+cp -r src/cfg-deepstream-trafficcamnet/ data-demo/cfg/deepstream
+./docker/run.sh -v $(realpath data-demo):/data/
 ```
 
-### /data directory structure
+
+## /data directory structure
 
 The `/data/` directory structure will be created if necessary on first run and will
 contain:
@@ -67,13 +50,10 @@ contain:
  This model is downloaded through the [src/setup-peoplenet.sh](src/setup-peoplenet.sh)
  script if it doesn't already exist.
 
-### Viewing Output
+## Viewing Output
 
-By default, the overlay output will be written to `/output/overlay.mp4` which
-will be available outside the container as described above.
-To write RTSP instead, customize the deepstream configuration file to use the
-RTSP output sink and then view based on configuration there, typically
-`rtsp://<ip address>:8554/ds-test`
+By default, the overlay output will be written to the RTSP output sink and can be viewed at
+`rtsp://<ip address>:8554/ds-test`.
 
 ## Modifying Settings
 You can access the content of the data-dir (default `data-default`) outside

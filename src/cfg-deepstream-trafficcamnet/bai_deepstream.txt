@@ -69,7 +69,7 @@ rtsp-port=8554
 udp-port=5400
 width=720
 height=480
-sync=1
+sync=0
 source-id=0
 gpu-id=0
 
@@ -95,9 +95,7 @@ batch-size=1
 gie-unique-id=1
 interval=0
 labelfile-path=/data/cfg/model/labels.txt
-#model-engine-file=sample_ssd_relu6.uff_b1_gpu0_fp32.engine
-#model-engine-file=resnet34_peoplenet_pruned.etlt_b1_gpu0_fp16.engine
-config-file=/data/cfg/deepstream/bai_tlt_config_infer_primary_peoplenet.txt
+config-file=/data/cfg/deepstream/bai_tlt_config_infer_primary_trafficcamnet.txt
 nvbuf-memory-type=0
 
 [tracker]

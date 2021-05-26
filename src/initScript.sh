@@ -17,8 +17,9 @@ if [ ! -d /output ]; then
     mkdir -p /data/output
     ln -s /data/output /output
 fi
-echo "Setting up peoplenet model"
+echo "Setting up peoplenet, trafficcamnet model"
 ./setup-peoplenet.sh
+./setup-trafficcamnet.sh
 cp --no-clobber -r cfg-model-default/* /data/cfg/model/
 ./deepstream-app -c /data/cfg/deepstream/bai_deepstream.txt 2>&1 \
     | tee /data/output/deepstream_logs.txt
