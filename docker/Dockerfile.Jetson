@@ -39,6 +39,8 @@ COPY --from=deepstream-build /usr/src/ \
 RUN mkdir -p /usr/src/app/ && \
     mkdir -p /usr/src/app/lib/
 
+RUN apt-get install -y unzip
+
 COPY --from=deepstream-build /usr/src/app/src/*.sh /usr/src/app/
 COPY --from=deepstream-build /usr/src/app/src/deepstream-app /usr/src/app/
 
