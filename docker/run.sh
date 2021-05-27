@@ -2,8 +2,8 @@
 pushd $(dirname $0)
 pushd ..
 # Did the run arguments specify a data mount?
-echo $@ | grep ":/data "
-if [ $# -eq 0 ] || [ $? -ne 0 ]; then
+echo $@ | grep ":/data"
+if [ $? -ne 0 ]; then
     echo "No data directory specified, using default at data-default"
     echo "To override location for persistent data dir, pass a volume mount as"
     echo "argument to this script, for instance with "

@@ -1,4 +1,4 @@
-# bai-nvdsanalytics
+# bai-nvdsanalytics (master branch)
 
 Boulder AI customizations on top of the NVIDIA deepstream nvdsanalytics project.
 
@@ -6,13 +6,17 @@ See [Deepstream Documentation](https://docs.nvidia.com/metropolis/deepstream/dev
 and [Gst-nvdsanalytics Documentation](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvdsanalytics.html)
 for more details about the configuration and setup.
 
+**This `master` branch can be used to run inference on `.mp4` files on both Jetson and dGPU platforms. To run on a Boulder AI DNNCam using the image sensor (`baicamerasrc`) as the input source, please check out the [baicamerasrc](https://bitbucket.org/boulderai/deepstream-nvdsanalytics/src/baicamerasrc/) branch of this repository and follow the README there.**
+
+--- 
+
 ## Building
 
-run `./docker/build.sh`
+Run `./docker/build.sh`
 
 ## Running
 
-run `./docker/run.sh [docker options]` where `[docker options]` can optionally
+Run `./docker/run.sh [docker options]` where `[docker options]` can optionally
 specify volume mounts to mount volumes inside the docker container with
 `-v <path>:<container path>` where `path` represents the path outside
 the container and `container path` represents the path inside the container.
@@ -35,7 +39,7 @@ Use these container paths:
 
 For more about docker volume mounts, see the [documentation on docker.com](https://docs.docker.com/storage/volumes/)
 
-Examples:
+### Examples:
 Run with default input video, writing output to `data-default`:
 
 `./docker/run.sh`
