@@ -1,12 +1,11 @@
-# bai-nvdsanalytics (master branch)
+# deepstream-nvdsanalytics-docker
 
-Boulder AI customizations on top of the NVIDIA deepstream nvdsanalytics project.
+This project demonstrates the use of NVIDIA deepstream nvdsanalytics sample source from the
+deepstream-nvdsanalytics-test sample application, modified to build and run via docker.
 
 See [Deepstream Documentation](https://docs.nvidia.com/metropolis/deepstream/dev-guide/index.html)
 and [Gst-nvdsanalytics Documentation](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvdsanalytics.html)
 for more details about the configuration and setup.
-
-**This `master` branch can be used to run inference on `.mp4` files on both Jetson and dGPU platforms. To run on a Boulder AI DNNCam using the image sensor (`baicamerasrc`) as the input source, please check out the [baicamerasrc](https://bitbucket.org/boulderai/deepstream-nvdsanalytics/src/baicamerasrc/) branch of this repository and follow the README there.**
 
 --- 
 
