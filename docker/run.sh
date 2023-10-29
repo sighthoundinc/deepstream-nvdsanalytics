@@ -15,4 +15,4 @@ docker run --net=host --runtime nvidia \
     -v ${data_dir}:/data/ \
     ${datamount} \
     $@ \
-   -it bai-deepstream
+   -it deepstream-nvdsanalytics-docker

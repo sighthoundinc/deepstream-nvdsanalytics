@@ -30,6 +30,7 @@
 #include <vector>
 #include <unordered_map>
 #include <sstream>
+#include <cuda_runtime_api.h>
 #include "gstnvdsmeta.h"
 #include "nvds_analytics_meta.h"
 #ifndef PLATFORM_TEGRA
@@ -306,15 +307,18 @@ main (int argc, char *argv[])
              *nvtracker = NULL, *nvdsanalytics = NULL,
       *nvvidconv = NULL, *nvosd = NULL, *tiler = NULL,
       *queue1, *queue2, *queue3, *queue4, *queue5, *queue6, *queue7;
-#ifdef PLATFORM_TEGRA
   GstElement *transform = NULL;
-#endif
   GstBus *bus = NULL;
   guint bus_watch_id;
   GstPad *nvdsanalytics_src_pad = NULL;
   guint i, num_sources;
   guint tiler_rows, tiler_columns;
   guint pgie_batch_size;
+
+  int current_device = -1;
+  cudaGetDevice(&current_device);
+  struct cudaDeviceProp prop;
+  cudaGetDeviceProperties(&prop, current_device);
 
   /* Check input arguments */
   if (argc < 2) {
@@ -403,9 +407,9 @@ main (int argc, char *argv[])
   queue7 = gst_element_factory_make ("queue", "queue7");
 
   /* Finally render the osd output */
-#ifdef PLATFORM_TEGRA
-  transform = gst_element_factory_make ("nvegltransform", "nvegl-transform");
-#endif
+  if(prop.integrated) {
+    transform = gst_element_factory_make ("nvegltransform", "nvegl-transform");
+  }
   sink = gst_element_factory_make ("nveglglessink", "nvvideo-renderer");
 
   if (!pgie || !nvtracker || !nvdsanalytics || !tiler || !nvvidconv ||
@@ -416,12 +420,10 @@ main (int argc, char *argv[])
     return -1;
   }
 
-#ifdef PLATFORM_TEGRA
-  if(!transform) {
+  if(!transform && prop.integrated) {
     g_printerr ("One tegra element could not be created. Exiting.\n");
     return -1;
   }
-#endif
 
   g_object_set (G_OBJECT (streammux), "width", MUXER_OUTPUT_WIDTH, "height",
       MUXER_OUTPUT_HEIGHT, "batch-size", num_sources,
@@ -433,8 +435,9 @@ main (int argc, char *argv[])
 
   /* Configure the nvtracker element for using the particular tracker algorithm. */
   g_object_set (G_OBJECT (nvtracker),
-      "ll-lib-file", "/opt/nvidia/deepstream/deepstream-5.0/lib/libnvds_nvdcf.so",
-      "ll-config-file", "tracker_config.yml", "tracker-width", 640, "tracker-height", 480,
+      "ll-lib-file", "/opt/nvidia/deepstream/deepstream-6.0/lib/libnvds_nvmultiobjecttracker.so",
+      "ll-config-file", "../../../../samples/configs/deepstream-app/config_tracker_NvDCF_perf.yml",
+      "tracker-width", 640, "tracker-height", 480,
        NULL);
 
   /* Configure the nvdsanalytics element for using the particular analytics config file*/
@@ -466,37 +469,38 @@ main (int argc, char *argv[])
 
   /* Set up the pipeline */
   /* we add all elements into the pipeline */
-#ifdef PLATFORM_TEGRA
-  gst_bin_add_many (GST_BIN (pipeline), queue1,  pgie, queue2, nvtracker, queue3,
-          nvdsanalytics , queue4, tiler, queue5,
-          nvvidconv, queue6, nvosd, queue7, transform, sink,
-      NULL);
+  if(prop.integrated) {
+    gst_bin_add_many (GST_BIN (pipeline), queue1,  pgie, queue2, nvtracker, queue3,
+            nvdsanalytics , queue4, tiler, queue5,
+            nvvidconv, queue6, nvosd, queue7, transform, sink,
+        NULL);
 
-  /* we link the elements together, with queues in between
-   * nvstreammux -> nvinfer -> nvtracker -> nvdsanalytics -> nvtiler ->
-   * nvvideoconvert -> nvosd -> transform -> sink
-   */
-  if (!gst_element_link_many (streammux,queue1, pgie , queue2, nvtracker,
-        queue3, nvdsanalytics, queue4, tiler, queue5,
-        nvvidconv, queue6, nvosd, queue7, transform, sink, NULL)) {
-    g_printerr ("Elements could not be linked. Exiting.\n");
-    return -1;
+    /* we link the elements together, with queues in between
+    * nvstreammux -> nvinfer -> nvtracker -> nvdsanalytics -> nvtiler ->
+    * nvvideoconvert -> nvosd -> transform -> sink
+    */
+    if (!gst_element_link_many (streammux,queue1, pgie , queue2, nvtracker,
+          queue3, nvdsanalytics, queue4, tiler, queue5,
+          nvvidconv, queue6, nvosd, queue7, transform, sink, NULL)) {
+      g_printerr ("Elements could not be linked. Exiting.\n");
+      return -1;
+    }
   }
-#else
-  gst_bin_add_many (GST_BIN (pipeline), queue1, pgie, queue2,
-                nvtracker, queue3, nvdsanalytics, queue4, tiler, queue5,
-                nvvidconv, queue6, nvosd, queue7, sink, NULL);
-  /* we link the elements together
-   * nvstreammux -> nvinfer -> nvtracker -> nvdsanalytics -> nvtiler ->
-   * nvvideoconvert -> nvosd -> sink
-   */
-  if (!gst_element_link_many (streammux, queue1, pgie, queue2, nvtracker,
-      queue3, nvdsanalytics, queue4, tiler, queue5, nvvidconv, queue6,
-       nvosd, queue7, sink, NULL)) {
-    g_printerr ("Elements could not be linked. Exiting.\n");
-    return -1;
+  else {
+    gst_bin_add_many (GST_BIN (pipeline), queue1, pgie, queue2,
+                  nvtracker, queue3, nvdsanalytics, queue4, tiler, queue5,
+                  nvvidconv, queue6, nvosd, queue7, sink, NULL);
+    /* we link the elements together
+    * nvstreammux -> nvinfer -> nvtracker -> nvdsanalytics -> nvtiler ->
+    * nvvideoconvert -> nvosd -> sink
+    */
+    if (!gst_element_link_many (streammux, queue1, pgie, queue2, nvtracker,
+        queue3, nvdsanalytics, queue4, tiler, queue5, nvvidconv, queue6,
+        nvosd, queue7, sink, NULL)) {
+      g_printerr ("Elements could not be linked. Exiting.\n");
+      return -1;
+    }
   }
-#endif
 
   /* Lets add probe to get informed of the meta data generated, we add probe to
    * the sink pad of the nvdsanalytics element, since by that time, the buffer

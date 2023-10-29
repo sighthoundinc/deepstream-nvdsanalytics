@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/deepstream:5.0.1-20.09-base AS deepstream-deploy
+FROM nvcr.io/nvidia/deepstream:6.0.1-base AS deepstream-deploy
 # None of the dGPU containers include the tensorrt/samples directory and
 # the corresponding nvinfer package also doesn't exist.  So pull this file
 # out of the github archive instead.
@@ -10,14 +10,11 @@ RUN mkdir -p /usr/src/app/src
 # A sample file so we can run without setup if needed.  Also not needed
 # for production
 RUN mkdir -p /opt/nvidia/deepstream/deepstream/samples/streams
-COPY --from=nvcr.io/nvidia/deepstream:5.0.1-20.09-samples \ 
+COPY --from=nvcr.io/nvidia/deepstream:6.0.1-devel \ 
     /opt/nvidia/deepstream/deepstream/samples/streams/sample_1080p_h265.mp4 \
     /opt/nvidia/deepstream/deepstream/samples/streams
 
-# With the samples container I hit the bug at
-# https://forums.developer.nvidia.com/t/nvcaffeparser-h-missing-in-docker-for-deepstream-5-0-objectdetector-yolo/154623/5?u=danwalkes1
-# attmpting to build the nvdsinfer plugin.
-FROM nvcr.io/nvidia/deepstream:5.0.1-20.09-triton AS deepstream-build
+FROM nvcr.io/nvidia/deepstream:6.0.1-devel AS deepstream-build
  
 RUN apt-get update && apt-get install -y build-essential
 RUN apt-get install -y libgstreamer1.0-dev libgstrtspserver-1.0-dev
@@ -29,7 +26,7 @@ COPY . /usr/src/app/src
 
 WORKDIR /usr/src/app/src
 
-RUN make -f Makefile.ds
+RUN export CUDA_VER=10.2 && make -f Makefile.ds
 
 FROM deepstream-deploy
 

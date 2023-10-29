@@ -20,13 +20,18 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
+CUDA_VER?=
+ifeq ($(CUDA_VER),)
+  $(error "CUDA_VER is not set")
+endif
+
 APP:= deepstream-app
 
 CXX=g++
 
 TARGET_DEVICE = $(shell gcc -dumpmachine | cut -f1 -d -)
 
-NVDS_VERSION:=5.0
+NVDS_VERSION:=6.0
 
 LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
 APP_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/bin/
@@ -35,10 +40,8 @@ ifeq ($(TARGET_DEVICE),aarch64)
   CFLAGS:= -DPLATFORM_TEGRA
 endif
 
-DEEPSTREAM_SOURCES=/opt/nvidia/deepstream/deepstream-5.0/sources
-DEEPSTREAM_SOURCES_APPS=$(DEEPSTREAM_SOURCES)/apps
-SRCS:= $(wildcard $(DEEPSTREAM_SOURCES_APPS)/apps-common/src/*.c)
-SRCS+= $(wildcard $(DEEPSTREAM_SOURCES_APPS)/sample_apps/deepstream-app/deepstream_app.c $(DEEPSTREAM_SOURCES_APPS)/sample_apps/deepstream-app/deepstream_app_config_parser.c)
+SRCS:= $(wildcard ../../apps-common/src/*.c)
+SRCS+= $(wildcard ../deepstream-app/deepstream_app.c ../deepstream-app/deepstream_app_config_parser.c)
 
 INCS:= $(wildcard *.h)
 
@@ -47,14 +50,17 @@ PKGS:= gstreamer-1.0 gstreamer-video-1.0 x11 json-glib-1.0
 OBJS:= $(SRCS:.c=.o)
 OBJS+= deepstream_nvdsanalytics_meta.o deepstream_app_main.o
 
-CFLAGS+= -I./ -I$(DEEPSTREAM_SOURCES_APPS)/apps-common/includes -I$(DEEPSTREAM_SOURCES)/includes  -I$(DEEPSTREAM_SOURCES_APPS)/sample_apps/deepstream-app/ -DDS_VERSION_MINOR=0 -DDS_VERSION_MAJOR=5
+CFLAGS+= -I./ -I../../apps-common/includes -I../../../includes  -I../deepstream-app/ -DDS_VERSION_MINOR=0 -DDS_VERSION_MAJOR=5 \
+		 -I /usr/local/cuda-$(CUDA_VER)/include
 
 LIBS+= -L$(LIB_INSTALL_DIR) -lnvdsgst_meta -lnvds_meta -lnvdsgst_helper -lnvdsgst_smartrecord -lnvds_utils -lnvds_msgbroker -lm \
-       -lgstrtspserver-1.0 -ldl -Wl,-rpath,$(LIB_INSTALL_DIR)
+       -lgstrtspserver-1.0 -ldl -Wl,-rpath,$(LIB_INSTALL_DIR) \
+	   -L/usr/local/cuda-$(CUDA_VER)/lib64/ -lcudart \
+	   -lcuda 
 
-CFLAGS+= `pkg-config --cflags $(PKGS)`
+CFLAGS+= $(shell pkg-config --cflags $(PKGS))
 
-LIBS+= `pkg-config --libs $(PKGS)`
+LIBS+= $(shell pkg-config --libs $(PKGS))
 
 all: $(APP)
 

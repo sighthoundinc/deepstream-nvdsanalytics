@@ -1,46 +1,41 @@
-FROM nvcr.io/nvidia/deepstream-l4t:5.0.1-20.09-base AS deepstream-deploy
-FROM nvcr.io/nvidia/deepstream-l4t:5.0.1-20.09-samples AS deepstream-build
- 
-RUN apt-get update && apt-get install -y build-essential
-RUN apt-get install -y libgstreamer1.0-dev libgstrtspserver-1.0-dev
-RUN apt-get install -y libjson-glib-dev
-# Additional dependencies for building uff files within the container
-# We won't need these in production
-RUN apt-get install -y wget
+ARG container_build_path=/opt/nvidia/deepstream/deepstream-6.0/sources/apps/sample_apps/deepstream-nvdsanalytics-docker 
+FROM nvcr.io/nvidia/deepstream-l4t:6.0.1-base AS deepstream-deploy
+ARG container_build_path
+RUN apt-get update && apt-get install -y unzip
 
-RUN mkdir -p /usr/src/app/src
+FROM nvcr.io/nvidia/deepstream-l4t:6.0.1-samples AS deepstream-build
+ARG container_build_path
 
-COPY . /usr/src/app/src
+RUN apt-get update && apt-get install -y build-essential \
+		libgstreamer1.0-dev \
+		libgstrtspserver-1.0-dev \
+		libjson-glib-dev \
+		wget
 
-WORKDIR /usr/src/app/src
+RUN echo $container_build_path
+COPY . $container_build_path
 
-RUN make -f Makefile.ds
+WORKDIR $container_build_path
+
+RUN export CUDA_VER=10.2 && make -f Makefile.ds
+
+RUN ls -la $container_build_path
+RUN echo $container_build_path
 
 FROM deepstream-deploy
-# Not needed in production container, only here for test purposes
-COPY --from=deepstream-build /opt/nvidia/deepstream/deepstream/samples/streams/sample_1080p_h265.mp4 \
-	/opt/nvidia/deepstream/deepstream/samples/streams/sample_1080p_h265.mp4
-# This is the only way I've found to get the tensorrt source dir copied into
-# the runtime container, for dynamic conversion from .pb to .uff.  It could
-# be simplified and could be removed for production images if we don't need
-# to support conversion from .pb to .uff
-COPY --from=deepstream-build /usr/src/ \
-    /usr/src/
+ARG container_build_path
 
 RUN mkdir -p /usr/src/app/ && \
     mkdir -p /usr/src/app/lib/
 
-RUN apt-get install -y unzip
-
-COPY --from=deepstream-build /usr/src/app/src/*.sh /usr/src/app/
-COPY --from=deepstream-build /usr/src/app/src/deepstream-app /usr/src/app/
+COPY --from=deepstream-build $container_build_path/*.sh /usr/src/app/
+COPY --from=deepstream-build $container_build_path/deepstream-app /usr/src/app/
 
 # Not needed in production containers
-COPY --from=deepstream-build /usr/src/app/src/cfg-deepstream-default \
+COPY --from=deepstream-build $container_build_path/cfg-deepstream-default \
     /usr/src/app/cfg-deepstream-default
-COPY --from=deepstream-build /usr/src/app/src/cfg-model-default \
+COPY --from=deepstream-build $container_build_path/cfg-model-default \
     /usr/src/app/cfg-model-default
-
 
 WORKDIR /usr/src/app
 

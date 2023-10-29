@@ -20,11 +20,16 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
+CUDA_VER?=
+ifeq ($(CUDA_VER),)
+  $(error "CUDA_VER is not set")
+endif
+
 APP:= deepstream-nvdsanalytics-test
 
 TARGET_DEVICE = $(shell gcc -dumpmachine | cut -f1 -d -)
 
-NVDS_VERSION:=5.0
+NVDS_VERSION:=6.0
 
 LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
 APP_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/bin/
@@ -41,17 +46,16 @@ PKGS:= gstreamer-1.0
 
 OBJS:= $(SRCS:.cpp=.o)
 
-DEEPSTREAM_SOURCES=/opt/nvidia/deepstream/deepstream-5.0/sources
-DEEPSTREAM_SOURCES_APPS=$(DEEPSTREAM_SOURCES)/apps
+CFLAGS+= -I../../../includes \
+		 -I /usr/local/cuda-$(CUDA_VER)/include
 
-CFLAGS+= -I$(DEEPSTREAM_SOURCES)/includes
+CFLAGS+= $(shell pkg-config --cflags $(PKGS))
 
-CFLAGS+= `pkg-config --cflags $(PKGS)`
-
-LIBS:= `pkg-config --libs $(PKGS)`
+LIBS:= $(shell pkg-config --libs $(PKGS))
 
 LIBS+= -L$(LIB_INSTALL_DIR) -lnvdsgst_meta -lnvds_meta -lnvdsgst_helper -lm \
-       -Wl,-rpath,$(LIB_INSTALL_DIR)
+       	-L/usr/local/cuda-$(CUDA_VER)/lib64/ -lcudart \
+	   -lcuda -Wl,-rpath,$(LIB_INSTALL_DIR)
 
 all: $(APP)
 
