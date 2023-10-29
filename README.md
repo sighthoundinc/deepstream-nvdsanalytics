@@ -43,6 +43,10 @@ Run with default input video, writing output to `data-default`:
 
 `./docker/run.sh`
 
+After running, the file from data-default/output.mp4 will contain
+annotations from the OSD module including detected people and
+a count of people who have crossed line annotations.
+
 Run with custom input video at `/tmp/my-test-video.mp4`
 writing output to `data-default`:
 
