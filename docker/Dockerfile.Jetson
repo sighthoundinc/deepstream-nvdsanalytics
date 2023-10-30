@@ -1,16 +1,13 @@
 ARG container_build_path=/opt/nvidia/deepstream/deepstream-6.0/sources/apps/sample_apps/deepstream-nvdsanalytics-docker 
-FROM nvcr.io/nvidia/deepstream-l4t:6.0.1-base AS deepstream-deploy
-ARG container_build_path
-RUN apt-get update && apt-get install -y unzip
-
-FROM nvcr.io/nvidia/deepstream-l4t:6.0.1-samples AS deepstream-build
+FROM nvcr.io/nvidia/deepstream-l4t:6.0.1-samples
 ARG container_build_path
 
 RUN apt-get update && apt-get install -y build-essential \
 		libgstreamer1.0-dev \
 		libgstrtspserver-1.0-dev \
 		libjson-glib-dev \
-		wget
+		wget \
+                unzip
 
 RUN echo $container_build_path
 COPY . $container_build_path
@@ -19,23 +16,8 @@ WORKDIR $container_build_path
 
 RUN export CUDA_VER=10.2 && make -f Makefile.ds
 
-RUN ls -la $container_build_path
-RUN echo $container_build_path
-
-FROM deepstream-deploy
-ARG container_build_path
-
-RUN mkdir -p /usr/src/app/ && \
-    mkdir -p /usr/src/app/lib/
-
-COPY --from=deepstream-build $container_build_path/*.sh /usr/src/app/
-COPY --from=deepstream-build $container_build_path/deepstream-app /usr/src/app/
-
-# Not needed in production containers
-COPY --from=deepstream-build $container_build_path/cfg-deepstream-default \
-    /usr/src/app/cfg-deepstream-default
-COPY --from=deepstream-build $container_build_path/cfg-model-default \
-    /usr/src/app/cfg-model-default
+RUN mkdir -p /usr/src/ && \
+    ln -s $container_build_path /usr/src/app
 
 WORKDIR /usr/src/app
 
